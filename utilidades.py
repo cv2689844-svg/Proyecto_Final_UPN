@@ -36,3 +36,35 @@ def segmentar_linea(linea):
     Retorna una lista de campos sin espacios en los extremos.
     """
     return [campo.strip() for campo in linea.strip().split("|")]
+
+
+
+def convertir_entero(texto, permitir_cero=False):
+    """Convierte un texto en entero positivo.
+
+    Retorna None si tiene letras, decimales, signo negativo o está vacío.
+    Con permitir_cero=True acepta también el 0.
+    """
+    texto = texto.strip()
+    if not (texto.isascii() and texto.isdigit()):
+        return None
+    valor = int(texto)
+    if valor == 0 and not permitir_cero:
+        return None
+    return valor
+
+
+def validar_estado(texto):
+    """Retorna el estado normalizado si existe en ESTADOS; si no, None."""
+    estado = normalizar_texto(texto)
+    if estado in ESTADOS:
+        return estado
+    return None
+
+
+def mostrar_titulo(titulo):
+    """Imprime un título con líneas decorativas (sin retorno)."""
+    print()
+    print("=" * 60)
+    print(titulo)
+    print("=" * 60)
