@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+# Datos generados al usar el programa
+pedidos.txt
+mermas.txt
+reporte_facturacion.txt
