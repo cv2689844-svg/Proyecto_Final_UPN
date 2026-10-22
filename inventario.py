@@ -53,3 +53,16 @@ def mostrar_inventario(productos):
     for p in productos:
         print(f"{p[COD]:<9}{p[NOMBRE]:<32}{p[PRECIO]:>8.2f}{p[STOCK]:>8}"
               f"{p[MAL]:>6}{stock_disponible(p):>9}")
+
+
+
+def buscar_por_nombre(productos, texto):
+    """Búsqueda parcial: retorna los productos cuyo nombre contiene el texto."""
+    texto = normalizar_texto(texto)
+    encontrados = []
+    if texto == "":
+        return encontrados
+    for producto in productos:
+        if texto in producto[NOMBRE]:
+            encontrados.append(producto)
+    return encontrados
