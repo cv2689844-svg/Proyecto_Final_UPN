@@ -66,3 +66,28 @@ def buscar_por_nombre(productos, texto):
         if texto in producto[NOMBRE]:
             encontrados.append(producto)
     return encontrados
+
+def registrar_mal_estado(productos, mermas, codigo, cantidad, motivo):
+    """Registra unidades en mal estado de un producto.
+
+    Las unidades siguen en el almacén pero dejan de estar disponibles para
+    la venta. Se guarda el motivo en la lista de mermas. Retorna (exito, mensaje).
+    """
+    posicion = buscar_por_codigo(productos, codigo)
+    if posicion == -1:
+        return False, "Producto no encontrado."
+    if cantidad is None or cantidad <= 0:
+        return False, "La cantidad debe ser un número entero positivo."
+    producto = productos[posicion]
+    disponible = stock_disponible(producto)
+    if cantidad > disponible:
+        return False, (f"Solo hay {disponible} unidades en buen estado; "
+                       f"no se pueden reportar {cantidad}.")
+    motivo = normalizar_texto(motivo).replace("|", "/")  # '|' es el separador
+    if motivo == "":
+        motivo = "SIN MOTIVO"
+    producto[MAL] += cantidad
+    mermas.append([producto[COD], cantidad, motivo, date.today().isoformat()])
+    return True, (f"Se registraron {cantidad} unidades en mal estado de "
+                  f"{producto[NOMBRE]}. Disponibles para facturar: "
+                  f"{stock_disponible(producto)}.")
