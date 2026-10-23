@@ -73,3 +73,37 @@ def actualizar_estado(pedidos, id_pedido, nuevo_estado):
                        f"El siguiente estado es {ESTADOS[indice_actual + 1]}.")
     pedidos[posicion][ESTADO] = nuevo
     return True, f"Pedido N° {id_pedido:04d} actualizado a {nuevo}."
+
+
+
+def buscar_pedidos_por_cliente(pedidos, texto):
+    """Búsqueda parcial: retorna los pedidos cuyo cliente contiene el texto."""
+    texto = normalizar_texto(texto)
+    encontrados = []
+    if texto == "":
+        return encontrados
+    for pedido in pedidos:
+        if texto in pedido[CLIENTE]:
+            encontrados.append(pedido)
+    return encontrados
+
+
+def linea_avance(estado):
+    """Retorna una línea que marca las etapas cumplidas del pedido."""
+    cumplidas = ESTADOS.index(estado)
+    etapas = []
+    for i in range(len(ESTADOS)):
+        marca = "X" if i <= cumplidas else " "
+        etapas.append(f"[{marca}] {ESTADOS[i]}")
+    return " -> ".join(etapas)
+
+
+def mostrar_pedido(pedido):
+    """Imprime el detalle de un pedido y su línea de avance (sin retorno)."""
+    mostrar_titulo(f"PEDIDO N° {pedido[ID]:04d}")
+    print(f"Cliente : {pedido[CLIENTE]}")
+    print(f"Vendedor: {pedido[VENDEDOR]}")
+    print(f"Producto: {pedido[PRODUCTO]}  x {pedido[CANTIDAD]} und.")
+    print(f"Total   : S/ {pedido[TOTAL]:.2f}")
+    print(f"Estado  : {pedido[ESTADO]}")
+    print(linea_avance(pedido[ESTADO]))
