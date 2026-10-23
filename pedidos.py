@@ -48,3 +48,28 @@ def crear_pedido(pedidos, productos, cliente, vendedor, codigo, cantidad):
     numero = siguiente_id(pedidos)
     pedidos.append([numero, cliente, vendedor, producto[0], cantidad, total, ESTADOS[0]])
     return True, f"Pedido N° {numero:04d} registrado. Total: S/ {total:.2f}"
+
+
+
+def actualizar_estado(pedidos, id_pedido, nuevo_estado):
+    """Cambia el estado de un pedido respetando el orden del flujo.
+
+    Solo se permite avanzar al estado inmediatamente siguiente
+    (REGISTRADO -> EN PREPARACION -> DESPACHADO -> ENTREGADO).
+    Retorna (exito, mensaje).
+    """
+    posicion = buscar_pedido(pedidos, id_pedido)
+    if posicion == -1:
+        return False, "Pedido no encontrado."
+    nuevo = validar_estado(nuevo_estado)
+    if nuevo is None:
+        return False, "Estado no válido. Use: " + ", ".join(ESTADOS) + "."
+    actual = pedidos[posicion][ESTADO]
+    indice_actual = ESTADOS.index(actual)
+    if indice_actual == len(ESTADOS) - 1:
+        return False, "El pedido ya fue entregado; no admite más cambios."
+    if ESTADOS.index(nuevo) != indice_actual + 1:
+        return False, (f"No se puede pasar de {actual} a {nuevo}. "
+                       f"El siguiente estado es {ESTADOS[indice_actual + 1]}.")
+    pedidos[posicion][ESTADO] = nuevo
+    return True, f"Pedido N° {id_pedido:04d} actualizado a {nuevo}."
