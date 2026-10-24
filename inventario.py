@@ -91,3 +91,35 @@ def registrar_mal_estado(productos, mermas, codigo, cantidad, motivo):
     return True, (f"Se registraron {cantidad} unidades en mal estado de "
                   f"{producto[NOMBRE]}. Disponibles para facturar: "
                   f"{stock_disponible(producto)}.")
+
+
+
+def lineas_reporte_facturacion(productos, mermas):
+    """Arma el reporte de productos en mal estado para el área de facturación.
+
+    Retorna una lista de líneas de texto (una por producto con mal estado).
+    """
+    lineas = []
+    for producto in productos:
+        if producto[MAL] > 0:
+            motivos = []
+            for merma in mermas:
+                if merma[0] == producto[COD]:
+                    motivos.append(merma[2])
+            perdida = round(producto[MAL] * producto[PRECIO], 2)
+            lineas.append(
+                f"{producto[COD]} | {producto[NOMBRE]} | "
+                f"Mal estado: {producto[MAL]} | "
+                f"Facturables: {stock_disponible(producto)} | "
+                f"Perdida estimada: S/ {perdida:.2f} | "
+                f"Motivo: {'; '.join(motivos)}")
+    return lineas
+
+
+def mostrar_reporte(lineas):
+    """Imprime el reporte de facturación en pantalla (sin retorno)."""
+    mostrar_titulo("REPORTE PARA FACTURACION - PRODUCTOS EN MAL ESTADO")
+    if len(lineas) == 0:
+        print("No hay productos en mal estado registrados.")
+    for linea in lineas:
+        print(linea)
