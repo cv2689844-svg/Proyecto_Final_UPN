@@ -128,10 +128,12 @@ def opcion_total_pedidos(lista_pedidos):
 def main():
     """Carga los datos, atiende el menú y guarda tras cada operación."""
     productos, lista_pedidos, mermas = datos.cargar_todo()
+    mostrar_menu()
     while True:
-        mostrar_menu()
-        opcion = input("Opción: ").strip()
-        if opcion == "0":
+        opcion = input("\nOpción (M = ver menú): ").strip().upper()
+        if opcion == "M":
+            mostrar_menu()
+        elif opcion == "0":
             print("Hasta pronto.")
             break
         elif opcion == "1":
