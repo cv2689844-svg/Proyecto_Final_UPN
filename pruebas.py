@@ -1,152 +1,161 @@
-"""Pruebas automáticas (unittest). Ejecutar con: python pruebas.py"""
+# ============================================================
+# pruebas.py
+# Pruebas del sistema: cada caso compara el resultado obtenido
+# con el resultado esperado y muestra APROBADO o FALLO.
+# Ejecutar con:  python pruebas.py
+# (Los mensajes [OK] / [ERROR] que aparecen son los que veria el usuario)
+# ============================================================
 
 import os
-import tempfile
-import unittest
-
 import datos
-import inventario as inv
-import pedidos as ped
-import utilidades as util
+import inventario
+import pedidos
+from utilidades import limpiar_texto, soles
+
+resultados = []   # aqui se guarda APROBADO o FALLO de cada caso
+
+
+def verificar(codigo, descripcion, condicion):
+  if condicion:
+    estado = "APROBADO"
+  else:
+    estado = "FALLO"
+
+  resultados.append(estado)
+  print(f"{codigo}  {descripcion:<52}{estado}\n")
 
 
 def datos_base():
-    """Crea productos de ejemplo: 500 jarabes y 1000 paracetamoles."""
-    return [["JAR-001", "JARABE PARA LA TOS", 12.5, 500, 0],
-            ["PAR-002", "PARACETAMOL 500 MG", 1.2, 1000, 0]]
+  # Productos de ejemplo (codigo, nombre, lote, vencimiento, precio, stock, mal)
+  return [[1, "ALERGINA", "59419", "MAY-28", 13.30, 290, 0],
+          [2, "ACTERIL", "58983", "ABR-28", 11.00, 1500, 0],
+          [3, "BANES FORTE", "67380", "JUN-29", 13.22, 1800, 0]]
 
 
-class PruebasInventario(unittest.TestCase):
-    def setUp(self):
-        self.productos = datos_base()
-        self.mermas = []
+# ---------------- INVENTARIO ----------------
 
-    def test_cp01_registrar_producto_valido(self):
-        ok, _ = inv.registrar_producto(self.productos, "AMO-004", "Amoxicilina", "32.00", 150)
-        self.assertTrue(ok)
-        self.assertEqual(self.productos[-1], ["AMO-004", "AMOXICILINA", 32.0, 150, 0])
+productos = datos_base()
+ok = inventario.registrar_producto(productos, "Cefinex", "2604103", "Abr-29", 6.85, 3000)
+verificar("CP-01", "Registrar producto valido", ok and len(productos) == 4 and productos[3][6] == 0)
 
-    def test_cp02_codigo_duplicado(self):
-        ok, _ = inv.registrar_producto(self.productos, "JAR-001", "Otro", "5", 10)
-        self.assertFalse(ok)
-        self.assertEqual(len(self.productos), 2)
+productos = datos_base()
+ok = inventario.registrar_producto(productos, "alergina", "59419", "May-28", 13.30, 10)
+verificar("CP-02", "Rechazar producto y lote duplicados", ok == False and len(productos) == 3)
 
-    def test_cp03_precio_no_numerico(self):
-        ok, _ = inv.registrar_producto(self.productos, "X-1", "Otro", "abc", 10)
-        self.assertFalse(ok)
-        self.assertEqual(len(self.productos), 2)
+productos = datos_base()
+ok = inventario.registrar_producto(productos, "Nuevo", "111", "Ene-30", 0, 10)
+verificar("CP-03", "Rechazar precio no valido (0)", ok == False and len(productos) == 3)
 
-    def test_cp04_busqueda_parcial(self):
-        encontrados = inv.buscar_por_nombre(self.productos, "jarabe")
-        self.assertEqual([p[0] for p in encontrados], ["JAR-001"])
+productos = datos_base()
+encontrados = inventario.buscar_por_nombre(productos, "ban")
+verificar("CP-04", "Busqueda parcial por nombre ('ban')", len(encontrados) == 1 and encontrados[0][1] == "BANES FORTE")
 
-    def test_cp05_treinta_en_mal_estado(self):
-        ok, _ = inv.registrar_mal_estado(self.productos, self.mermas, "JAR-001", 30, "frasco roto")
-        self.assertTrue(ok)
-        self.assertEqual(inv.stock_disponible(self.productos[0]), 470)
-        self.assertEqual(len(self.mermas), 1)
+productos = datos_base()
+mermas = []
+inventario.registrar_mal_estado(productos, mermas, 1, 30, "frasco roto")
+verificar("CP-05", "30 en mal estado de 290 -> disponible 260",
+          inventario.stock_disponible(productos[0]) == 260 and len(mermas) == 1)
 
-    def test_cp06_mal_estado_mayor_al_stock(self):
-        ok, _ = inv.registrar_mal_estado(self.productos, self.mermas, "JAR-001", 600, "x")
-        self.assertFalse(ok)
-        self.assertEqual(self.productos[0][inv.MAL], 0)
-        self.assertEqual(self.mermas, [])
+productos = datos_base()
+mermas = []
+ok = inventario.registrar_mal_estado(productos, mermas, 1, 400, "vencido")
+verificar("CP-06", "Rechazar mal estado mayor al stock (400 de 290)",
+          ok == False and productos[0][6] == 0 and len(mermas) == 0)
 
-    def test_cp07_reporte_facturacion(self):
-        inv.registrar_mal_estado(self.productos, self.mermas, "JAR-001", 30, "vencido")
-        lineas = inv.lineas_reporte_facturacion(self.productos, self.mermas)
-        self.assertEqual(len(lineas), 1)
-        self.assertIn("JAR-001", lineas[0])
+productos = datos_base()
+mermas = []
+inventario.registrar_mal_estado(productos, mermas, 1, 30, "vencido")
+lineas = inventario.lineas_reporte_facturacion(productos, mermas)
+verificar("CP-07", "Reporte de facturacion solo con productos danados",
+          len(lineas) == 1 and "ALERGINA" in lineas[0])
 
+# ---------------- PEDIDOS ----------------
 
-class PruebasPedidos(unittest.TestCase):
-    def setUp(self):
-        self.productos = datos_base()
-        self.lista = []
+productos = datos_base()
+lista = []
+ok = pedidos.crear_pedido(lista, productos, "Farmacia Salud", "Ana", 1, 100)
+verificar("CP-08", "Crear pedido valido (100 x 13.30 = 1330.00)",
+          ok and lista[0][5] == 1330.00 and productos[0][5] == 190 and lista[0][6] == "REGISTRADO")
 
-    def test_cp08_crear_pedido_valido(self):
-        ok, _ = ped.crear_pedido(self.lista, self.productos, "Farmacia Salud", "Ana", "JAR-001", 100)
-        self.assertTrue(ok)
-        self.assertEqual(self.lista[0][ped.TOTAL], 1250.00)
-        self.assertEqual(self.productos[0][inv.STOCK], 400)
-        self.assertEqual(self.lista[0][ped.ESTADO], "REGISTRADO")
+productos = datos_base()
+lista = []
+inventario.registrar_mal_estado(productos, [], 1, 30, "roto")
+rechazado = pedidos.crear_pedido(lista, productos, "Cliente", "Ana", 1, 270)
+aceptado = pedidos.crear_pedido(lista, productos, "Cliente", "Ana", 1, 260)
+verificar("CP-09", "Pedir 270 se rechaza; pedir 260 se acepta", rechazado == False and aceptado == True)
 
-    def test_cp09_pedido_excede_unidades_aptas(self):
-        inv.registrar_mal_estado(self.productos, [], "JAR-001", 30, "roto")
-        ok, _ = ped.crear_pedido(self.lista, self.productos, "Cliente", "Ana", "JAR-001", 480)
-        self.assertFalse(ok)
-        ok, _ = ped.crear_pedido(self.lista, self.productos, "Cliente", "Ana", "JAR-001", 470)
-        self.assertTrue(ok)
+productos = datos_base()
+lista = []
+ok = pedidos.crear_pedido(lista, productos, "Cliente", "Ana", 99, 1)
+verificar("CP-10", "Pedido de producto inexistente", ok == False and len(lista) == 0)
 
-    def test_cp10_producto_inexistente(self):
-        ok, _ = ped.crear_pedido(self.lista, self.productos, "Cliente", "Ana", "XXX-999", 1)
-        self.assertFalse(ok)
-        self.assertEqual(self.lista, [])
+productos = datos_base()
+lista = []
+pedidos.crear_pedido(lista, productos, "Cliente", "Ana", 1, 5)
+ok = pedidos.actualizar_estado(lista, 1, "en preparacion")
+verificar("CP-11", "Avanzar estado en orden", ok and lista[0][6] == "EN PREPARACION")
 
-    def test_cp11_avanzar_estado_en_orden(self):
-        ped.crear_pedido(self.lista, self.productos, "Cliente", "Ana", "JAR-001", 5)
-        ok, _ = ped.actualizar_estado(self.lista, 1, "en preparacion")
-        self.assertTrue(ok)
-        self.assertEqual(self.lista[0][ped.ESTADO], "EN PREPARACION")
+productos = datos_base()
+lista = []
+pedidos.crear_pedido(lista, productos, "Cliente", "Ana", 1, 5)
+ok = pedidos.actualizar_estado(lista, 1, "ENTREGADO")
+verificar("CP-12", "Rechazar salto de estado", ok == False and lista[0][6] == "REGISTRADO")
 
-    def test_cp12_rechazar_salto_de_estado(self):
-        ped.crear_pedido(self.lista, self.productos, "Cliente", "Ana", "JAR-001", 5)
-        ok, _ = ped.actualizar_estado(self.lista, 1, "ENTREGADO")
-        self.assertFalse(ok)
-        self.assertEqual(self.lista[0][ped.ESTADO], "REGISTRADO")
+productos = datos_base()
+lista = []
+pedidos.crear_pedido(lista, productos, "Cliente", "Ana", 1, 5)
+ok = pedidos.actualizar_estado(lista, 1, "PERDIDO")
+verificar("CP-13", "Rechazar estado inexistente", ok == False and lista[0][6] == "REGISTRADO")
 
-    def test_cp13_estado_inexistente(self):
-        ped.crear_pedido(self.lista, self.productos, "Cliente", "Ana", "JAR-001", 5)
-        ok, mensaje = ped.actualizar_estado(self.lista, 1, "PERDIDO")
-        self.assertFalse(ok)
-        self.assertIn("no válido", mensaje)
+lista = []
+verificar("CP-14", "Consultar pedido inexistente (retorna -1)", pedidos.buscar_pedido(lista, 99) == -1)
 
-    def test_cp14_pedido_inexistente(self):
-        self.assertEqual(ped.buscar_pedido(self.lista, 99), -1)
+productos = datos_base()
+lista = []
+pedidos.crear_pedido(lista, productos, "Farmacia Salud Vida", "Ana", 1, 5)
+pedidos.crear_pedido(lista, productos, "Botica Central", "Ana", 2, 5)
+encontrados = pedidos.buscar_pedidos_por_cliente(lista, "salud")
+verificar("CP-15", "Buscar pedidos por parte del cliente", len(encontrados) == 1)
 
-    def test_cp15_buscar_por_cliente(self):
-        ped.crear_pedido(self.lista, self.productos, "Farmacia Salud Vida", "Ana", "JAR-001", 5)
-        ped.crear_pedido(self.lista, self.productos, "Botica Central", "Ana", "PAR-002", 5)
-        self.assertEqual(len(ped.buscar_pedidos_por_cliente(self.lista, "salud")), 1)
+lista = [[1, "A", "V", 1, 1, 13.30, "REGISTRADO"],
+         [2, "B", "V", 1, 3, 39.90, "REGISTRADO"],
+         [3, "C", "V", 2, 10, 110.00, "REGISTRADO"]]
+rec = pedidos.total_pedidos_recursivo(lista)
+ite = pedidos.total_pedidos_iterativo(lista)
+verificar("CP-16", "Total recursivo igual al iterativo (163.20)", rec == ite and rec == 163.20)
 
-    def test_cp16_total_recursivo_igual_a_iterativo(self):
-        self.lista = [[1, "A", "V", "JAR-001", 1, 12.5, "REGISTRADO"],
-                      [2, "B", "V", "JAR-001", 3, 37.5, "REGISTRADO"],
-                      [3, "C", "V", "PAR-002", 10, 12.0, "REGISTRADO"]]
-        self.assertEqual(ped.total_pedidos_recursivo(self.lista), 62.0)
-        self.assertEqual(ped.total_pedidos_recursivo(self.lista),
-                         ped.total_pedidos_iterativo(self.lista))
+# ---------------- ARCHIVOS Y CADENAS ----------------
 
+productos = datos_base()
+lista = [[1, "CLIENTE", "ANA", 1, 5, 66.5, "REGISTRADO"]]
+mermas = [[1, 3, "ROTO"]]
+datos.guardar_tabla("prueba_productos.txt", productos)
+datos.guardar_tabla("prueba_pedidos.txt", lista)
+datos.guardar_tabla("prueba_mermas.txt", mermas)
+igual = (datos.cargar_productos("prueba_productos.txt") == productos
+         and datos.cargar_pedidos("prueba_pedidos.txt") == lista
+         and datos.cargar_mermas("prueba_mermas.txt") == mermas)
+verificar("CP-17", "Persistencia: guardar y volver a cargar", igual)
 
-class PruebasArchivosYCadenas(unittest.TestCase):
-    def setUp(self):
-        self.carpeta = tempfile.TemporaryDirectory()
-        self.original = datos.CARPETA
-        datos.CARPETA = self.carpeta.name
+archivo = open("prueba_productos.txt", "w", encoding="utf-8")
+archivo.write("1|ALERGINA|59419|MAY-28|13.30|290|0\n")
+archivo.write("2|INCOMPLETA|123\n")
+archivo.write("3|TEXTO|111|ENE-30|abc|10|0\n")
+archivo.close()
+cargados = datos.cargar_productos("prueba_productos.txt")
+verificar("CP-18", "Archivo con lineas danadas (solo carga la valida)",
+          len(cargados) == 1 and cargados[0][1] == "ALERGINA")
 
-    def tearDown(self):
-        datos.CARPETA = self.original
-        self.carpeta.cleanup()
+verificar("CP-19", "Manejo de cadenas (limpiar y soles)",
+          limpiar_texto("  jarabe   tos ") == "JARABE TOS"
+          and limpiar_texto("a|b") == "A/B"
+          and soles(1234.5) == "S/ 1,234.50")
 
-    def test_cp17_persistencia(self):
-        productos = datos_base()
-        lista = [[1, "CLIENTE", "ANA", "JAR-001", 5, 62.5, "REGISTRADO"]]
-        mermas = [["JAR-001", 3, "ROTO", "2026-10-21"]]
-        datos.guardar_todo(productos, lista, mermas)
-        self.assertEqual(datos.cargar_todo(), (productos, lista, mermas))
+# Se borran los archivos temporales de las pruebas
+for nombre in ["prueba_productos.txt", "prueba_pedidos.txt", "prueba_mermas.txt"]:
+  if os.path.exists(nombre):
+    os.remove(nombre)
 
-    def test_cp18_lineas_danadas(self):
-        with open(os.path.join(self.carpeta.name, "productos.txt"), "w", encoding="utf-8") as f:
-            f.write("JAR-001|JARABE|12.5|500|0\n")
-            f.write("PAR-002|INCOMPLETA|1.2\n")
-            f.write("IBU-003|TEXTO|abc|10|0\n")
-        self.assertEqual(datos.cargar_productos(), [["JAR-001", "JARABE", 12.5, 500, 0]])
-
-    def test_cp19_manejo_de_cadenas(self):
-        self.assertEqual(util.normalizar_texto("  jarabe   tos "), "JARABE TOS")
-        self.assertEqual(util.convertir_precio("S/ 12,50"), 12.5)
-        self.assertEqual(util.segmentar_linea("a | b|  C "), ["a", "b", "C"])
-
-
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
+print("=" * 60)
+print(f"RESULTADO: {resultados.count('APROBADO')} de {len(resultados)} casos APROBADOS")
+print("=" * 60)
