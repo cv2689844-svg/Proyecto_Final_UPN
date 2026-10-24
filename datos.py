@@ -1,103 +1,112 @@
-"""Persistencia: lectura y escritura de tablas en archivos de texto."""
+# ============================================================
+# datos.py
+# Persistencia: guardar y cargar la informacion en archivos de texto
+# Cada linea del archivo es una fila; los campos se separan con '|'
+# ============================================================
 
-import os
-
-from utilidades import segmentar_linea
-
-# Carpeta donde se guardan los archivos (la misma del programa).
-CARPETA = os.path.dirname(os.path.abspath(__file__))
-SEPARADOR = "|"
-
-
-def _ruta(nombre):
-    """Retorna la ruta completa de un archivo de datos."""
-    return os.path.join(CARPETA, nombre)
+NOMBRE_PRODUCTOS = "productos.txt"
+NOMBRE_PEDIDOS = "pedidos.txt"
+NOMBRE_MERMAS = "mermas.txt"
+NOMBRE_REPORTE = "reporte_facturacion.txt"
 
 
-def cargar_tabla(nombre, tipos):
-    """Lee un archivo y retorna una lista bidimensional (una fila por línea).
+def guardar_tabla(nombre, tabla):
+  # Escribe una lista 2D en un archivo: una fila por linea
+  archivo = open(nombre, "w", encoding="utf-8")
 
-    Si el archivo no existe retorna []. Las líneas vacías, los comentarios (#)
-    y las líneas corruptas se ignoran para que el sistema no se caiga.
-    """
-    tabla = []
-    ruta = _ruta(nombre)
-    if not os.path.exists(ruta):
-        return tabla
-    with open(ruta, "r", encoding="utf-8") as archivo:
-        for linea in archivo:
-            if linea.strip() == "" or linea.startswith("#"):
-                continue
-            campos = segmentar_linea(linea)
-            if len(campos) != len(tipos):
-                continue
-            try:
-                fila = [tipo(campo) for tipo, campo in zip(tipos, campos)]
-            except ValueError:
-                continue
-            tabla.append(fila)
-    return tabla
+  for fila in tabla:
+    campos = []
+    for campo in fila:
+      campos.append(str(campo))
+    archivo.write("|".join(campos) + "\n")
+
+  archivo.close()
 
 
-def guardar_tabla(nombre, tabla, encabezado=""):
-    """Escribe una lista bidimensional en un archivo, una fila por línea."""
-    with open(_ruta(nombre), "w", encoding="utf-8") as archivo:
-        if encabezado != "":
-            archivo.write("# " + encabezado + "\n")
-        for fila in tabla:
-            archivo.write(SEPARADOR.join(str(campo) for campo in fila) + "\n")
+def leer_lineas(nombre):
+  # Retorna las lineas utiles del archivo (sin vacias ni comentarios #)
+  lineas = []
+
+  try:
+    archivo = open(nombre, "r", encoding="utf-8")
+  except FileNotFoundError:
+    return lineas   # si el archivo no existe, la tabla queda vacia
+
+  for linea in archivo:
+    linea = linea.strip()
+    if linea != "" and not linea.startswith("#"):
+      lineas.append(linea)
+
+  archivo.close()
+  return lineas
 
 
+def cargar_productos(nombre=NOMBRE_PRODUCTOS):
+  # Fila: codigo | nombre | lote | vencimiento | precio | stock | mal estado
+  productos = []
 
-# Archivos y tipos de cada campo.
-ARCHIVO_PRODUCTOS = "productos.txt"
-ARCHIVO_PEDIDOS = "pedidos.txt"
-ARCHIVO_MERMAS = "mermas.txt"
-ARCHIVO_REPORTE = "reporte_facturacion.txt"
+  for linea in leer_lineas(nombre):
+    campos = linea.split("|")
 
-TIPOS_PRODUCTOS = [str, str, float, int, int]
-TIPOS_PEDIDOS = [int, str, str, str, int, float, str]
-TIPOS_MERMAS = [str, int, str, str]
+    if len(campos) == 7:
+      try:
+        fila = [int(campos[0]), campos[1], campos[2], campos[3],
+                float(campos[4]), int(campos[5]), int(campos[6])]
+        productos.append(fila)
+      except ValueError:
+        pass   # linea danada: se ignora para que el programa no se caiga
 
-
-def cargar_productos():
-    """Retorna la lista 2D de productos guardada en disco."""
-    return cargar_tabla(ARCHIVO_PRODUCTOS, TIPOS_PRODUCTOS)
-
-
-def cargar_pedidos():
-    """Retorna la lista 2D de pedidos guardada en disco."""
-    return cargar_tabla(ARCHIVO_PEDIDOS, TIPOS_PEDIDOS)
+  return productos
 
 
-def cargar_mermas():
-    """Retorna la lista 2D de productos en mal estado guardada en disco."""
-    return cargar_tabla(ARCHIVO_MERMAS, TIPOS_MERMAS)
+def cargar_pedidos(nombre=NOMBRE_PEDIDOS):
+  # Fila: numero | cliente | vendedor | codigo producto | cantidad | total | estado
+  pedidos = []
+
+  for linea in leer_lineas(nombre):
+    campos = linea.split("|")
+
+    if len(campos) == 7:
+      try:
+        fila = [int(campos[0]), campos[1], campos[2], int(campos[3]),
+                int(campos[4]), float(campos[5]), campos[6]]
+        pedidos.append(fila)
+      except ValueError:
+        pass
+
+  return pedidos
 
 
-def cargar_todo():
-    """Carga las tres tablas y las retorna como (productos, pedidos, mermas)."""
-    return cargar_productos(), cargar_pedidos(), cargar_mermas()
+def cargar_mermas(nombre=NOMBRE_MERMAS):
+  # Fila: codigo producto | cantidad en mal estado | motivo
+  mermas = []
+
+  for linea in leer_lineas(nombre):
+    campos = linea.split("|")
+
+    if len(campos) == 3:
+      try:
+        fila = [int(campos[0]), int(campos[1]), campos[2]]
+        mermas.append(fila)
+      except ValueError:
+        pass
+
+  return mermas
 
 
 def guardar_todo(productos, pedidos, mermas):
-    """Guarda las tres tablas en sus archivos (sin retorno)."""
-    guardar_tabla(ARCHIVO_PRODUCTOS, productos,
-                  "codigo|nombre|precio|stock_total|mal_estado")
-    guardar_tabla(ARCHIVO_PEDIDOS, pedidos,
-                  "numero|cliente|vendedor|codigo|cantidad|total|estado")
-    guardar_tabla(ARCHIVO_MERMAS, mermas,
-                  "codigo|cantidad|motivo|fecha")
+  # Guarda las tres tablas (se llama despues de cada operacion)
+  guardar_tabla(NOMBRE_PRODUCTOS, productos)
+  guardar_tabla(NOMBRE_PEDIDOS, pedidos)
+  guardar_tabla(NOMBRE_MERMAS, mermas)
 
 
 def exportar_reporte(lineas):
-    """Escribe el reporte de facturación en un archivo de texto.
+  # Guarda el reporte de facturacion en un archivo de texto
+  archivo = open(NOMBRE_REPORTE, "w", encoding="utf-8")
+  archivo.write("REPORTE DE PRODUCTOS EN MAL ESTADO PARA FACTURACION\n")
 
-    Retorna la ruta del archivo generado.
-    """
-    ruta = _ruta(ARCHIVO_REPORTE)
-    with open(ruta, "w", encoding="utf-8") as archivo:
-        archivo.write("REPORTE DE PRODUCTOS EN MAL ESTADO PARA FACTURACION\n")
-        for linea in lineas:
-            archivo.write(linea + "\n")
-    return ruta
+  for linea in lineas:
+    archivo.write(linea + "\n")
+
+  archivo.close()
