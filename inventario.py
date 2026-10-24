@@ -123,3 +123,5 @@ def mostrar_reporte(lineas):
         print("No hay productos en mal estado registrados.")
     for linea in lineas:
         print(linea)
+
+        

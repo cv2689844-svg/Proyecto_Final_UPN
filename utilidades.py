@@ -68,3 +68,14 @@ def mostrar_titulo(titulo):
     print("=" * 60)
     print(titulo)
     print("=" * 60)
+
+def sumar_recursivo(valores, indice=0):
+    """Suma los elementos de una lista de forma recursiva.
+
+    Caso base: si el índice llega al final de la lista, la suma es 0.
+    Caso recursivo: valor actual + suma del resto de la lista.
+    """
+    if indice >= len(valores):
+        return 0
+    return valores[indice] + sumar_recursivo(valores, indice + 1)
+
