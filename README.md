@@ -7,30 +7,24 @@ Resuelve dos problemas: (1) el seguimiento del estado de los pedidos y
 **Integrantes:** Ventura Mozo Cristian David (N00184343) · Pascual Llajaruna Bryan Wilmer (N00481499)
 **Docente:** Delgado Chavarri Anthony Hans · UPN Trujillo 2026
 
-## Requisitos
-Python 3.10 o superior. No necesita instalar paquetes (solo biblioteca estándar).
-
 ## Ejecución
 ```bash
-python main.py      # abre el menú
-python pruebas.py   # ejecuta las 19 pruebas automáticas
+python main.py       # abre el menú
+python pruebas.py    # ejecuta los 19 casos de prueba
 ```
+Solo usa Python 3 (no hay que instalar paquetes).
 
-## Estructura
+## Archivos
 | Archivo | Responsabilidad |
 |---|---|
-| `main.py` | Menú y coordinación del flujo (único módulo que interactúa con el usuario) |
-| `inventario.py` | Productos, búsqueda, productos en mal estado y reporte para facturación |
-| `pedidos.py` | Registro de pedidos, estados (REGISTRADO → EN PREPARACION → DESPACHADO → ENTREGADO) y consultas |
-| `datos.py` | Persistencia en archivos de texto (`productos.txt`, `pedidos.txt`, `mermas.txt`) |
-| `utilidades.py` | Cadenas, validaciones y recursividad |
-| `pruebas.py` | Pruebas con `unittest` (CP-01 a CP-19) |
+| `main.py` | Menú principal (único módulo que habla con el usuario) |
+| `inventario.py` | Productos, productos en mal estado y reporte para facturación |
+| `pedidos.py` | Pedidos y sus estados: REGISTRADO → EN PREPARACION → DESPACHADO → ENTREGADO |
+| `datos.py` | Guardar y cargar la información en archivos de texto |
+| `utilidades.py` | Validaciones (`leer_entero`, `leer_decimal`), textos y recursividad |
+| `pruebas.py` | 19 casos de prueba (CP-01 a CP-19) |
+| `productos.txt` | Catálogo de 25 productos con lote, vencimiento, precio y stock |
 
 ## Regla central
 `stock disponible = stock total - unidades en mal estado`.
-Si de 500 jarabes hay 30 en mal estado, solo se pueden pedir y facturar 470.
-
-> Los datos de `productos.txt` son de ejemplo; reemplazarlos por el catálogo real.
-
-## Flujo de trabajo Git
-Ramas `feature/inventario`, `feature/pedidos` y `feature/reportes-menu`, integradas a `main` con merge.
+Ejemplo: ALERGINA tiene 290 unidades; si 30 están en mal estado, solo se pueden pedir y facturar 260.
