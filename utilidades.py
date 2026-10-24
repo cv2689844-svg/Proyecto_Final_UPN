@@ -69,7 +69,10 @@ def mostrar_titulo(titulo):
     print(titulo)
     print("=" * 60)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4ef803be4d2b7ef6a44832bd76e932f2680186a7
 def sumar_recursivo(valores, indice=0):
     """Suma los elementos de una lista de forma recursiva.
 
@@ -79,3 +82,7 @@ def sumar_recursivo(valores, indice=0):
     if indice >= len(valores):
         return 0
     return valores[indice] + sumar_recursivo(valores, indice + 1)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4ef803be4d2b7ef6a44832bd76e932f2680186a7
