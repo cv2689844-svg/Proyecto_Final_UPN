@@ -92,11 +92,8 @@ def registrar_mal_estado(productos, mermas, codigo, cantidad, motivo):
                   f"{producto[NOMBRE]}. Disponibles para facturar: "
                   f"{stock_disponible(producto)}.")
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> 4ef803be4d2b7ef6a44832bd76e932f2680186a7
 def lineas_reporte_facturacion(productos, mermas):
     """Arma el reporte de productos en mal estado para el área de facturación.
 
@@ -126,8 +123,5 @@ def mostrar_reporte(lineas):
         print("No hay productos en mal estado registrados.")
     for linea in lineas:
         print(linea)
-<<<<<<< HEAD
-=======
 
         
->>>>>>> 4ef803be4d2b7ef6a44832bd76e932f2680186a7
