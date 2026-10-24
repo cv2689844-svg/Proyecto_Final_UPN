@@ -1,6 +1,6 @@
 """Pedidos: registro, seguimiento de estados y consultas."""
 
-from utilidades import normalizar_texto, validar_estado, ESTADOS, mostrar_titulo
+from utilidades import normalizar_texto, validar_estado, ESTADOS, mostrar_titulo, sumar_recursivo    
 from inventario import buscar_por_codigo, stock_disponible, STOCK, PRECIO
 
 # Posiciones de cada campo dentro de una fila de pedido.
@@ -107,3 +107,16 @@ def mostrar_pedido(pedido):
     print(f"Total   : S/ {pedido[TOTAL]:.2f}")
     print(f"Estado  : {pedido[ESTADO]}")
     print(linea_avance(pedido[ESTADO]))
+
+def total_pedidos_recursivo(pedidos):
+    """Total acumulado de todos los pedidos, calculado con recursividad."""
+    totales = [pedido[TOTAL] for pedido in pedidos]
+    return round(sumar_recursivo(totales), 2)
+
+
+def total_pedidos_iterativo(pedidos):
+    """Total acumulado de todos los pedidos con un ciclo (versión eficiente)."""
+    suma = 0
+    for pedido in pedidos:
+        suma += pedido[TOTAL]
+    return round(suma, 2)
